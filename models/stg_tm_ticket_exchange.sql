@@ -1,0 +1,1 @@
+select * from raw.jaffle_shop.tm_ticket_exchange
