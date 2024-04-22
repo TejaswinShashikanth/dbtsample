@@ -3,7 +3,7 @@ version: 2
 
 models:
     - name: dim_customer_marketing
-      descrption: "Incremental model"
+      description: "Incre"
       columns:
         - name : _pk
           description : "Primary Key for the table"

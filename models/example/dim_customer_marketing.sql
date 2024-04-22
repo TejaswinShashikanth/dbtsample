@@ -38,7 +38,7 @@ seat_num_ownership AS (
         seat_num
 )
 SELECT
-CONCAT(s.event_id, '_', s.seat_section_id, '_', s.seat_row_num, '_', s.seat_num) AS _pk,
+CONCAT(s.ticket_exchange_id,'_',s.event_id, '_', s.seat_section_id, '_', s.seat_row_num, '_', s.seat_num,'_', s.activity_date) AS _pk,
     s.event_id,
     e.event_name,
     e.season_id,
