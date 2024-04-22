@@ -2,6 +2,15 @@
 version: 2
 
 models:
+    - name: dim_customer_marketing
+      descrption: "Incremental model"
+      columns:
+        - name : _pk
+          description : "Primary Key for the table"
+          tests:
+              - unique
+              - not null
+          
     - name: my_first_dbt_model
       description: "A starter dbt model"
       columns:
