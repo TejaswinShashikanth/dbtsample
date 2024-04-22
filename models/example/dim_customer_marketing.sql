@@ -1,9 +1,9 @@
-{{config (
-    materialized = 'incremental',
-    unique_key = '_pk'
-)}}
+{{ config(
+    materialized='incremental',
+    unique_key='_pk'
+) }}
 
-
+-- Common Table Expressions (CTEs) for generating seat numbers and ownership
 WITH RECURSIVE SeatNumbers AS (
     SELECT 0 AS seat_num
     UNION ALL
@@ -13,7 +13,7 @@ WITH RECURSIVE SeatNumbers AS (
 ),
 seat_num_ownership_dummy AS (
     SELECT
-  t.ticket_exchange_id,
+        t.ticket_exchange_id,
         t.event_id,
         t.account_id,
         t.seat_section_id,
@@ -29,16 +29,26 @@ seat_num_ownership_dummy AS (
         SeatNumbers sn ON sn.seat_num < t.num_seats
 ),
 seat_num_ownership AS (
-    SELECT *
-    FROM seat_num_ownership_dummy
-    ORDER BY
+    SELECT
+        ROW_NUMBER() OVER(PARTITION BY event_id, seat_section_id, seat_row_num, seat_num ORDER BY activity_date DESC) AS row_num,
+        ticket_exchange_id,
+        event_id,
         account_id,
         seat_section_id,
         seat_row_num,
-        seat_num
+        seat_num,
+        activity_date,
+        rep_email,
+        total_ticket_price,
+        order_num
+    FROM
+        seat_num_ownership_dummy
 )
+
+-- Selecting data from the CTEs and joining with other tables
 SELECT
-CONCAT(s.ticket_exchange_id,'_',s.event_id, '_', s.seat_section_id, '_', s.seat_row_num, '_', s.seat_num,'_', s.activity_date) AS _pk,
+    --CONCAT(s.event_id, '_', s.seat_section_id, '_', s.seat_row_num, '_', s.seat_num) AS _pk,
+    CONCAT(s.ticket_exchange_id, '_', s.event_id, '_', s.account_id, '_', s.seat_section_id,'_',s.seat_row_num,'_',s.seat_num) AS _pk,
     s.event_id,
     e.event_name,
     e.season_id,
@@ -70,14 +80,4 @@ LEFT JOIN
 LEFT JOIN
     stg_crm_contact AS c ON s.account_id = c.tm_account_id
 WHERE
-    NOT EXISTS (
-        SELECT 1
-        FROM seat_num_ownership AS t2
-        WHERE
-            s.event_id = t2.event_id
-            AND s.seat_section_id = t2.seat_section_id
-            AND s.seat_row_num = t2.seat_row_num
-            AND s.seat_num = t2.seat_num
-            AND s.account_id != t2.account_id
-            AND s.activity_date < t2.activity_date
-    )
+    s.row_num = 1
